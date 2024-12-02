@@ -1,21 +1,33 @@
 FROM python:3.9-slim
 
+# Set working directory
 WORKDIR /app
 
-# Copy requirements first to leverage Docker cache
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PORT=8080
+
+# Install system dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files
+# Copy application code
 COPY main.py .
 COPY src/ src/
 COPY words.csv .
 
-# Make port 8080 available to the world outside this container
+# Create non-root user
+RUN useradd -m appuser && chown -R appuser /app
+USER appuser
+
+# Expose port
 EXPOSE 8080
 
-# Set environment variable
-ENV PORT=8080
-
-# Run the application with explicit host binding
-CMD ["python", "-u", "main.py"]
+# Run the application
+CMD ["python", "main.py"]
