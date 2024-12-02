@@ -1,56 +1,31 @@
-# Flask Web App Starter
+# Flask Web App
 
-A Flask starter template as per [these docs](https://flask.palletsprojects.com/en/3.0.x/quickstart/#a-minimal-application).
+## Docker Hub Deployment
 
-## Getting Started
+1. Create Docker Hub account at hub.docker.com
+2. Create access token in Docker Hub (Account Settings > Security)
+3. Add GitHub secrets:
+   - DOCKERHUB_USERNAME
+   - DOCKERHUB_TOKEN
 
-Previews should run automatically when starting a workspace.
+4. Push to main branch to trigger automatic build and publish
 
+To use:
+```
+docker pull your-username/repository-name
+docker run -p 8080:8080 your-username/repository-name
+```
 
-Deploy to Render.com (Easiest Method):
+## Local Docker
 
-Create account at render.com
+```
+docker build -t word-explorer .
+docker run -p 8080:8080 word-explorer
+```
 
-Create new Web Service
-
-Connect your repository
-
-Set build command: pip install -r requirements.txt
-
-Set start command: gunicorn main:app
-
-Choose free plan
-
-Click Deploy
-
-Deploy with Docker (Any cloud platform):
-
-Build: docker build -t word-explorer .
-
-Run: docker run -p 8080:8080 word-explorer
-
-The application is ready for deployment with:
-
-Production-ready Flask configuration
-
-Dockerfile for containerization
-
-Gunicorn for production server
-
-Environment variable support for cloud platforms
-
-Required dependencies in requirements.txt
-
-Files prepared for deployment:
-
-main.py - Flask application with production settings
-
-requirements.txt - Dependencies (Flask, Gunicorn)
-
-Dockerfile - Container configuration
-
-src/index.html - Frontend interface
-
-words.csv - Word database
-
-Choose either Render.com for simple deployment or Docker for more flexibility. The application will work the same way in both environments, providing word search, synonyms/antonyms lookup, and favorite word management functionality.
+## Files
+- main.py - Flask app
+- Dockerfile - Container config
+- .github/workflows/docker-publish.yml - CI/CD
+- src/index.html - Frontend
+- words.csv - Data
