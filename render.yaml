@@ -1,0 +1,8 @@
+# Exported from Render on 2024-12-02T09:52:10Z
+services:
+- type: web
+  name: word machine
+  runtime: static
+  repo: https://github.com/pleabargain/test
+  staticPublishPath: build
+version: "1"
