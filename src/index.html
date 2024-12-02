@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Explorer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+        .search-section, .favorites-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .search-box {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .word-card {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        .word-card h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .favorite-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .favorite-btn:hover {
+            background: #0056b3;
+        }
+        .note-input {
+            width: 100%;
+            padding: 5px;
+            margin-top: 5px;
+        }
+        .favorites-section h2 {
+            margin-top: 0;
+        }
+        .favorite-item {
+            background: #fff;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>Word Explorer</h1>
+    <div class="container">
+        <div class="search-section">
+            <input type="text" class="search-box" placeholder="Search for a word..." id="searchInput">
+            <div id="searchResults"></div>
+        </div>
+        <div class="favorites-section">
+            <h2>Favorites</h2>
+            <div id="favoritesList"></div>
+        </div>
+    </div>
+
+    <script>
+        let wordsData = [];
+        let favorites = JSON.parse(localStorage.getItem('favorites') || '{}');
+
+        // Fetch and parse CSV data
+        fetch('words.csv')
+            .then(response => response.text())
+            .then(csv => {
+                wordsData = csv.split('\n')
+                    .slice(1) // Skip header
+                    .map(line => {
+                        const [word, synonyms, antonyms] = line.split(',');
+                        return {
+                            word: word?.trim(),
+                            synonyms: synonyms?.trim(),
+                            antonyms: antonyms?.trim()
+                        };
+                    })
+                    .filter(item => item.word); // Remove empty entries
+            });
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            if (searchTerm.length < 2) {
+                document.getElementById('searchResults').innerHTML = '';
+                return;
+            }
+
+            const results = wordsData.filter(item => 
+                item.word.toLowerCase().includes(searchTerm) ||
+                (item.synonyms && item.synonyms.toLowerCase().includes(searchTerm)) ||
+                (item.antonyms && item.antonyms.toLowerCase().includes(searchTerm))
+            ).slice(0, 10); // Limit to 10 results
+
+            displayResults(results);
+        });
+
+        function displayResults(results) {
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.innerHTML = results.map(item => `
+                <div class="word-card">
+                    <h3>${item.word}</h3>
+                    ${item.synonyms ? `<p><strong>Synonyms:</strong> ${item.synonyms}</p>` : ''}
+                    ${item.antonyms ? `<p><strong>Antonyms:</strong> ${item.antonyms}</p>` : ''}
+                    <button class="favorite-btn" onclick="toggleFavorite('${item.word}', '${item.synonyms}', '${item.antonyms}')">
+                        ${favorites[item.word] ? 'Remove from Favorites' : 'Add to Favorites'}
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function toggleFavorite(word, synonyms, antonyms) {
+            if (favorites[word]) {
+                delete favorites[word];
+            } else {
+                favorites[word] = {
+                    synonyms,
+                    antonyms,
+                    note: ''
+                };
+            }
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            displayFavorites();
+            // Refresh search results to update buttons
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput.value) {
+                const event = new Event('input');
+                searchInput.dispatchEvent(event);
+            }
+        }
+
+        function updateNote(word, note) {
+            if (favorites[word]) {
+                favorites[word].note = note;
+                localStorage.setItem('favorites', JSON.stringify(favorites));
+            }
+        }
+
+        function displayFavorites() {
+            const favoritesDiv = document.getElementById('favoritesList');
+            favoritesDiv.innerHTML = Object.entries(favorites).map(([word, data]) => `
+                <div class="favorite-item">
+                    <h3>${word}</h3>
+                    ${data.synonyms ? `<p><strong>Synonyms:</strong> ${data.synonyms}</p>` : ''}
+                    ${data.antonyms ? `<p><strong>Antonyms:</strong> ${data.antonyms}</p>` : ''}
+                    <textarea 
+                        class="note-input" 
+                        placeholder="Add a note..."
+                        onchange="updateNote('${word}', this.value)"
+                    >${data.note || ''}</textarea>
+                    <button class="favorite-btn" onclick="toggleFavorite('${word}')">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        // Initial display of favorites
+        displayFavorites();
+    </script>
+</body>
+</html>
